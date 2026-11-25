@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+supabase
+beautifulsoup4
+requests
+sentence-transformers
+python-dotenv
+pypdf
+python-multipart
