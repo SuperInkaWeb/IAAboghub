@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import modal
@@ -34,13 +35,19 @@ imagen_aboghub = (
 
 app = modal.App("aboghub-ia-propia")
 
+secret_config = (
+    modal.Secret.from_dotenv()
+    if os.path.exists(".env")
+    else modal.Secret.from_name("aboghub-env")
+)
+
 @app.function(
     image=imagen_aboghub,
     gpu="L4",
     memory=16384,
     timeout=300,
     scaledown_window=300,
-    secrets=[modal.Secret.from_name("aboghub-env")]
+    secrets=[secret_config]
 )
 @modal.asgi_app()
 def fastapi_app():
