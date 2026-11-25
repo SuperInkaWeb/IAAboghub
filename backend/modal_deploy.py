@@ -40,7 +40,7 @@ app = modal.App("aboghub-ia-propia")
     memory=16384,
     timeout=300,
     scaledown_window=300,
-    secrets=[modal.Secret.from_dotenv()]
+    secrets=[modal.Secret.from_name("aboghub-env")]
 )
 @modal.asgi_app()
 def fastapi_app():

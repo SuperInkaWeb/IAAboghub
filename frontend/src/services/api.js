@@ -1,10 +1,20 @@
-const DEFAULT_CLOUD_URL = import.meta.env.VITE_CLOUD_API_URL || "https://andrescaiza31--aboghub-ia-propia-fastapi-app.us-east.modal.run/api";
-const DEFAULT_LOCAL_URL = import.meta.env.VITE_LOCAL_API_URL || "http://127.0.0.1:8000/api";
+function normalizarUrlApi(url) {
+  if (!url) return "";
+  const limpia = url.trim().replace(/\/+$/, "");
+  return limpia.endsWith("/api") ? limpia : `${limpia}/api`;
+}
+
+const DEFAULT_CLOUD_URL = normalizarUrlApi(
+  import.meta.env.VITE_CLOUD_API_URL || "https://andrescaiza31--aboghub-ia-propia-fastapi-app.us-east.modal.run/api"
+);
+const DEFAULT_LOCAL_URL = normalizarUrlApi(
+  import.meta.env.VITE_LOCAL_API_URL || "http://127.0.0.1:8000/api"
+);
 
 export function esUrlPlaceholder(url) {
   if (!url) return true;
   const lower = url.toLowerCase();
-  return lower.includes("tu-usuario--") || lower.includes("tu-usuario-aboghub");
+  return lower.includes("tu-usuario--") || lower.includes("tu-usuario-aboghub") || lower.includes("andrescalza31");
 }
 
 export function obtenerModoMotor() {
@@ -17,20 +27,19 @@ export function establecerModoMotor(modo) {
 }
 
 export function obtenerUrlCloud() {
+  if (import.meta.env.VITE_CLOUD_API_URL) {
+    return DEFAULT_CLOUD_URL;
+  }
   const guardada = localStorage.getItem("aboghub_cloud_url");
-  if (
-    !guardada ||
-    esUrlPlaceholder(guardada) ||
-    !guardada.includes("andrescaiza31--aboghub-ia-propia-fastapi-app.us-east.modal.run")
-  ) {
+  if (!guardada || esUrlPlaceholder(guardada)) {
     localStorage.setItem("aboghub_cloud_url", DEFAULT_CLOUD_URL);
     return DEFAULT_CLOUD_URL;
   }
-  return guardada;
+  return normalizarUrlApi(guardada);
 }
 
 export function establecerUrlCloud(url) {
-  const limpia = url.trim().replace(/\/+$/, "");
+  const limpia = normalizarUrlApi(url);
   localStorage.setItem("aboghub_cloud_url", limpia);
 }
 
