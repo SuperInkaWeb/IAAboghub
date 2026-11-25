@@ -79,7 +79,7 @@ export default function Navbar({
       </nav>
 
       <div className="flex items-center gap-3 shrink-0">
-        {esSuperadmin && (
+        {false && esSuperadmin && (
           <div
             title="Switch exclusivo de Superadmin: Alterna entre tu Laptop Local (Demo) y Hugging Face Cloud (24/7)"
             className="flex items-center border-2 border-black bg-neutral-100 p-0.5"

@@ -8,12 +8,8 @@ export function esUrlPlaceholder(url) {
 }
 
 export function obtenerModoMotor() {
-  const modo = localStorage.getItem("aboghub_engine_mode") || "local";
-  if (modo === "cloud" && esUrlPlaceholder(obtenerUrlCloud())) {
-    localStorage.setItem("aboghub_engine_mode", "local");
-    return "local";
-  }
-  return modo;
+  localStorage.setItem("aboghub_engine_mode", "cloud");
+  return "cloud";
 }
 
 export function establecerModoMotor(modo) {

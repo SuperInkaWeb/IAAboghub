@@ -80,17 +80,8 @@ export default function AuthModal({ modoInicial = "login", cerrar, alAutenticar 
           </div>
 
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-neutral-100 border border-neutral-300 flex items-center gap-1">
-            {modoMotorActual === "local" ? (
-              <>
-                <Laptop className="w-3 h-3 text-blue-600" />
-                Motor Local
-              </>
-            ) : (
-              <>
-                <Cloud className="w-3 h-3 text-blue-600" />
-                Motor Cloud
-              </>
-            )}
+            <Cloud className="w-3 h-3 text-blue-600" />
+            Acceso Cloud 24/7
           </span>
         </div>
 
@@ -182,15 +173,6 @@ export default function AuthModal({ modoInicial = "login", cerrar, alAutenticar 
                 <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                 <span className="leading-relaxed font-medium">{error}</span>
               </div>
-              {modoMotorActual === "cloud" && (
-                <button
-                  type="button"
-                  onClick={forzarMotorLocal}
-                  className="w-full mt-1 bg-black text-white text-[10px] font-bold uppercase tracking-wider py-1.5 px-3"
-                >
-                  Cambiar a Servidor Local (http://127.0.0.1:8000)
-                </button>
-              )}
             </div>
           )}
 

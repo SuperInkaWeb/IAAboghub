@@ -273,7 +273,7 @@ export default function IngestionDrawer({
             </div>
           </div>
 
-          {usuario?.rol === "superadmin" && (
+          {false && usuario?.rol === "superadmin" && (
             <form onSubmit={guardarRutasServidor} className="pt-3 border-t border-neutral-200 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600">
