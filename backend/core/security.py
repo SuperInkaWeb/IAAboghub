@@ -39,6 +39,8 @@ def generate_raw_api_key() -> str:
     return f"abog_live_{secrets.token_urlsafe(24)}"
 
 def create_access_token(payload: dict) -> str:
+    if not settings.JWT_SECRET_KEY:
+        raise ValueError("JWT_SECRET_KEY no está configurada en las variables de entorno (.env).")
     header = {"alg": "HS256", "typ": "JWT"}
     exp = int(time.time()) + (settings.JWT_EXPIRATION_HOURS * 3600)
     body = {**payload, "exp": exp}
@@ -50,6 +52,8 @@ def create_access_token(payload: dict) -> str:
     return f"{header_b64}.{body_b64}.{sig_b64}"
 
 def decode_access_token(token: str) -> dict:
+    if not settings.JWT_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="JWT_SECRET_KEY no está configurada en el servidor.")
     try:
         header_b64, body_b64, sig_b64 = token.split(".")
         signing_input = f"{header_b64}.{body_b64}".encode("utf-8")

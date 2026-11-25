@@ -1,12 +1,14 @@
+import os
 import json
-import re
 from typing import Iterator
+from core.config import settings
 from core.database import supabase_db
 from core.logger import logger
 from services.scraper import scraper_peruano
 from services.embeddings import embedding_service
 from services.llm import llm_service
 from services.pdf_processor import pdf_processor
+import re
 
 class RAGEngine:
     def listar_fuentes(self) -> list[str]:
@@ -74,7 +76,15 @@ class RAGEngine:
         return self.procesar_y_guardar_texto(texto_limpio, fuente, referencia)
 
     def ingestar_bytes_pdf(self, nombre_archivo: str, contenido_bytes: bytes, fuente: str, referencia: str) -> dict:
-        ruta_guardado = pdf_processor.directorio_raw / nombre_archivo
+        max_bytes = settings.MAX_PDF_SIZE_MB * 1024 * 1024
+        if len(contenido_bytes) > max_bytes:
+            raise ValueError(f"El archivo PDF supera el límite permitido de {settings.MAX_PDF_SIZE_MB} MB.")
+
+        nombre_seguro = os.path.basename(nombre_archivo).replace("..", "")
+        if not nombre_seguro.lower().endswith(".pdf"):
+            raise ValueError("Nombre de archivo PDF inválido.")
+
+        ruta_guardado = pdf_processor.directorio_raw / nombre_seguro
         with open(ruta_guardado, "wb") as archivo:
             archivo.write(contenido_bytes)
 
@@ -87,7 +97,8 @@ class RAGEngine:
         return resultado
 
     def ingestar_pdf_local(self, nombre_archivo: str, fuente: str, referencia: str) -> dict:
-        texto_limpio = pdf_processor.extraer_texto_archivo(nombre_archivo)
+        nombre_seguro = os.path.basename(nombre_archivo).replace("..", "")
+        texto_limpio = pdf_processor.extraer_texto_archivo(nombre_seguro)
         if not texto_limpio.strip():
             raise ValueError("El archivo PDF local no contiene texto seleccionable.")
         return self.procesar_y_guardar_texto(texto_limpio, fuente, referencia)
@@ -111,15 +122,18 @@ class RAGEngine:
         fuente_filtro: str | None = None,
         historial: list[dict] | None = None
     ) -> list[dict]:
+        limite_seguro = max(1, min(int(limite_resultados), 10))
+        umbral_seguro = max(0.05, min(float(umbral_similitud), 0.95))
+
         consulta_efectiva = self.construir_consulta_contextual(consulta, historial)
         vector_consulta = embedding_service.generar_vector(consulta_efectiva)
 
-        cantidad_candidatos = max(limite_resultados * 4, 12)
+        cantidad_candidatos = max(limite_seguro * 4, 12)
         respuesta = supabase_db.rpc(
             "buscar_jurisprudencia",
             {
                 "query_embedding": vector_consulta,
-                "match_threshold": umbral_similitud,
+                "match_threshold": umbral_seguro,
                 "match_count": cantidad_candidatos
             }
         ).execute()
@@ -153,10 +167,10 @@ class RAGEngine:
             if cand.get("id") not in ids_vistos:
                 combinados.append(cand)
                 ids_vistos.add(cand.get("id"))
-            if len(combinados) >= limite_resultados:
+            if len(combinados) >= limite_seguro:
                 break
 
-        return combinados[:limite_resultados]
+        return combinados[:limite_seguro]
 
     def buscar_similares(
         self,

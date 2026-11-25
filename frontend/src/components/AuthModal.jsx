@@ -147,7 +147,7 @@ export default function AuthModal({ modoInicial = "login", cerrar, alAutenticar 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="superadmin@aboghub.com"
+              placeholder="correo@aboghub.com"
               className="w-full bg-neutral-50 border border-neutral-300 px-3.5 py-2.5 text-xs text-black focus:outline-none focus:border-black"
             />
           </div>

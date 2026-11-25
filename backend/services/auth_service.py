@@ -13,8 +13,8 @@ class AuthService:
         if not email_limpio or not nombre_limpio or len(password) < 6:
             raise ValueError("Completa todos los campos y usa una contraseña de al menos 6 caracteres.")
 
-        if email_limpio == settings.SUPERADMIN_EMAIL:
-            raise ValueError("Este correo está reservado para el Superadmin del sistema.")
+        if settings.SUPERADMIN_EMAIL and email_limpio == settings.SUPERADMIN_EMAIL:
+            raise ValueError("No se puede registrar una cuenta con este correo electrónico.")
 
         existente = supabase_db.table("usuarios").select("id").eq("email", email_limpio).execute()
         if existente.data:
@@ -54,25 +54,26 @@ class AuthService:
     def autenticar(self, email: str, password: str) -> dict:
         email_limpio = email.strip().lower()
 
-        if email_limpio == settings.SUPERADMIN_EMAIL:
-            if not hmac.compare_digest(password, settings.SUPERADMIN_PASSWORD):
-                raise ValueError("Credenciales de Superadmin inválidas.")
-            token = create_access_token({
-                "sub": "superadmin-root",
-                "email": settings.SUPERADMIN_EMAIL,
-                "nombre": settings.SUPERADMIN_NOMBRE,
-                "rol": "superadmin"
-            })
-            return {
-                "token": token,
-                "usuario": {
-                    "id": "superadmin-root",
-                    "nombre": settings.SUPERADMIN_NOMBRE,
+        if settings.SUPERADMIN_EMAIL and settings.SUPERADMIN_PASSWORD:
+            if hmac.compare_digest(email_limpio, settings.SUPERADMIN_EMAIL):
+                if not hmac.compare_digest(password, settings.SUPERADMIN_PASSWORD):
+                    raise ValueError("Credenciales inválidas. Verifica tu correo y contraseña.")
+                token = create_access_token({
+                    "sub": "superadmin-root",
                     "email": settings.SUPERADMIN_EMAIL,
-                    "rol": "superadmin",
-                    "activo": True
+                    "nombre": settings.SUPERADMIN_NOMBRE,
+                    "rol": "superadmin"
+                })
+                return {
+                    "token": token,
+                    "usuario": {
+                        "id": "superadmin-root",
+                        "nombre": settings.SUPERADMIN_NOMBRE,
+                        "email": settings.SUPERADMIN_EMAIL,
+                        "rol": "superadmin",
+                        "activo": True
+                    }
                 }
-            }
 
         consulta = supabase_db.table("usuarios").select("*").eq("email", email_limpio).execute()
         if not consulta.data:
@@ -120,8 +121,8 @@ class AuthService:
             raise ValueError("Solo se pueden crear cuentas con rol 'admin' o 'usuario'. El rol 'superadmin' es único y está protegido.")
 
         email_limpio = email.strip().lower()
-        if email_limpio == settings.SUPERADMIN_EMAIL:
-            raise ValueError("Ese correo pertenece al Superadmin quemado en el sistema.")
+        if settings.SUPERADMIN_EMAIL and email_limpio == settings.SUPERADMIN_EMAIL:
+            raise ValueError("Ese correo está reservado en las variables de entorno del servidor.")
 
         existente = supabase_db.table("usuarios").select("id").eq("email", email_limpio).execute()
         if existente.data:

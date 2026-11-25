@@ -1,0 +1,44 @@
+name: Deploy Backend to Modal Cloud GPU
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+jobs:
+  deploy-modal:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Modal CLI
+        run: pip install modal
+
+      - name: Generate .env from GitHub Secrets for Modal Secret Injection
+        run: |
+          cat <<EOF > .env
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL }}
+          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD }}
+          SUPERADMIN_NOMBRE=Superadmin Principal AbogHub
+          EOF
+
+      - name: Deploy FastAPI + Ollama GPU to Modal
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: python -m modal deploy modal_deploy.py
