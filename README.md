@@ -49,7 +49,6 @@ aboghub-ia-propia/
 │   │   └── scraper.py           # Scraper de normas legales
 │   ├── main.py                  # Punto de entrada FastAPI y middlewares
 │   ├── modal_deploy.py          # Despliegue Serverless GPU (NVIDIA L4) en Modal.com
-│   ├── Dockerfile               # Imagen Docker con Python + Ollama
 │   └── requirements.txt         # Dependencias del backend
 └── frontend/
     ├── src/
