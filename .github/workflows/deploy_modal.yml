@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "backend/**"
+      - ".github/workflows/deploy_modal.yml"
   workflow_dispatch:
 
 jobs:
@@ -23,19 +24,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Modal CLI
-        run: pip install modal
+      - name: Install Modal CLI and python-dotenv
+        run: pip install modal python-dotenv
 
       - name: Generate .env from GitHub Secrets
         env:
           ENV_FILE_SECRET: ${{ secrets.ENV_FILE }}
         run: |
           if [ -n "$ENV_FILE_SECRET" ]; then
-            printf "%s\n" "$ENV_FILE_SECRET" > .env
+            printf "%s\n" "$ENV_FILE_SECRET" | tr -d '\r' > .env
+            echo "Archivo .env generado correctamente con $(wc -l < .env) lineas."
+          else
+            echo "ADVERTENCIA: El secreto ENV_FILE esta vacio."
           fi
 
-      - name: Deploy FastAPI + Ollama GPU to Modal
+      - name: Authenticate and Deploy FastAPI + Ollama GPU to Modal
         env:
-          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
-          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-        run: python -m modal deploy modal_deploy.py
+          RAW_MODAL_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          RAW_MODAL_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          CLEAN_ID=$(printf "%s" "$RAW_MODAL_ID" | tr -d '[:space:]')
+          CLEAN_SECRET=$(printf "%s" "$RAW_MODAL_SECRET" | tr -d '[:space:]')
+          python -m modal token set --token-id "$CLEAN_ID" --token-secret "$CLEAN_SECRET"
+          python -m modal deploy modal_deploy.py
