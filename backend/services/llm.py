@@ -48,6 +48,7 @@ class LLMService:
             )
 
         return (
+            "/no_think\n"
             "Eres AbogHub IA, el motor de inteligencia jurídica soberana de AbogHub.com especializado en legislación y jurisprudencia peruana.\n"
             f"{instruccion_perfil}\n"
             "Tu única fuente de verdad normativa es el CONTEXTO LEGAL proporcionado a continuación.\n"
@@ -55,11 +56,11 @@ class LLMService:
             "1. Responde únicamente con base en la información contenida en el CONTEXTO LEGAL.\n"
             "2. Cita explícitamente la Fuente y Referencia de los documentos que respaldan tu respuesta.\n"
             "3. Si la respuesta no se encuentra en el CONTEXTO LEGAL, indica claramente que no hay información suficiente en la base de datos para responder.\n"
-            "4. No emitas etiquetas <think> ni razonamientos ocultos; entrega directamente el dictamen en español formal.\n\n"
+            "4. Entrega directamente el dictamen final en español formal y conciso.\n\n"
             f"{bloque_historial}"
             f"=== CONTEXTO LEGAL ===\n{contexto_unido}\n\n"
             f"=== CONSULTA ACTUAL DEL USUARIO ===\n{pregunta}\n\n"
-            "=== DICTAMEN / RESPUESTA ==="
+            "=== DICTAMEN / RESPUESTA === /no_think"
         )
 
     def generar_respuesta(
@@ -77,14 +78,17 @@ class LLMService:
             "model": modelo_activo,
             "prompt": prompt,
             "stream": False,
+            "think": False,
             "options": {
-                "temperature": 0.1
+                "temperature": 0.1,
+                "num_ctx": 3072,
+                "num_predict": 650
             }
         }
 
         try:
             logger.info(f"[LLM] Solicitando dictamen a Ollama (modelo={modelo_activo}, fragmentos={len(fragmentos)})")
-            respuesta = requests.post(self.url_generacion, json=carga, timeout=180)
+            respuesta = requests.post(self.url_generacion, json=carga, timeout=120)
             if respuesta.status_code == 404:
                 raise RuntimeError(
                     f"El modelo '{modelo_activo}' no está descargado en Ollama. Ejecuta 'ollama pull {modelo_activo}' en tu terminal."
@@ -98,9 +102,9 @@ class LLMService:
                 f"El servicio local de Ollama ({self.url_base}) no responde. Verifica que Ollama esté encendido en tu equipo."
             )
         except requests.exceptions.Timeout:
-            logger.error(f"[LLM] Tiempo de espera agotado (180s) esperando respuesta de {modelo_activo}")
+            logger.error(f"[LLM] Tiempo de espera agotado (120s) esperando respuesta de {modelo_activo}")
             raise RuntimeError(
-                f"El modelo '{modelo_activo}' tardó más de 180 segundos en responder. Intenta con una consulta más específica."
+                f"El modelo '{modelo_activo}' tardó demasiado en responder. Intenta con una consulta más específica."
             )
 
     def generar_respuesta_stream(
@@ -118,14 +122,17 @@ class LLMService:
             "model": modelo_activo,
             "prompt": prompt,
             "stream": True,
+            "think": False,
             "options": {
-                "temperature": 0.1
+                "temperature": 0.1,
+                "num_ctx": 3072,
+                "num_predict": 650
             }
         }
 
         try:
-            logger.info(f"[LLM-STREAM] Iniciando streaming con Ollama (modelo={modelo_activo}, modo={modo_perfil})")
-            with requests.post(self.url_generacion, json=carga, stream=True, timeout=180) as respuesta:
+            logger.info(f"[LLM-STREAM] Iniciando streaming rápido sin thinking (modelo={modelo_activo}, modo={modo_perfil})")
+            with requests.post(self.url_generacion, json=carga, stream=True, timeout=120) as respuesta:
                 if respuesta.status_code == 404:
                     raise RuntimeError(
                         f"El modelo '{modelo_activo}' no está instalado en Ollama. Ejecuta 'ollama pull {modelo_activo}' en tu consola."

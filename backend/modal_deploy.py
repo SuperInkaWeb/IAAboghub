@@ -43,10 +43,10 @@ secret_config = (
 
 @app.function(
     image=imagen_aboghub,
-    gpu="L4",
-    memory=16384,
-    timeout=300,
-    scaledown_window=300,
+    gpu="T4",
+    memory=8192,
+    timeout=180,
+    scaledown_window=45,
     secrets=[secret_config]
 )
 @modal.asgi_app()

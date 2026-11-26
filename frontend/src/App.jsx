@@ -5,8 +5,6 @@ import {
   obtenerHeadersAuth,
   obtenerModoMotor,
   establecerModoMotor,
-  esUrlPlaceholder,
-  obtenerUrlCloud,
   traducirError,
   registrarLogCliente
 } from "./services/api";
@@ -75,8 +73,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    verificarBaseDatos();
-  }, [modoMotor]);
+    if (usuario) {
+      verificarBaseDatos();
+    }
+  }, [usuario, modoMotor]);
 
   useEffect(() => {
     finChatRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,14 +84,6 @@ export default function App() {
 
   const cambiarModoMotor = (nuevoModo) => {
     if (!usuario || usuario.rol !== "superadmin") return;
-    if (nuevoModo === "cloud" && esUrlPlaceholder(obtenerUrlCloud())) {
-      setMostrarPanelIngesta(true);
-      setAlertaSistema(
-        "Antes de activar 'Cloud 24/7', despliega tu backend en Modal y pega tu URL real (https://...modal.run/api) en el cuadro 'Conmutador de Servidores' que se acaba de desplegar aquí arriba. Por ahora sigues conectado a tu Laptop Local."
-      );
-      registrarLogCliente("AVISO", "Switch Cloud", "Intento de activar Cloud con URL placeholder sin configurar");
-      return;
-    }
     setAlertaSistema(null);
     establecerModoMotor(nuevoModo);
     setModoMotor(nuevoModo);

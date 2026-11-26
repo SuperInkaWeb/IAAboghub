@@ -4,21 +4,10 @@ function normalizarUrlApi(url) {
   return limpia.endsWith("/api") ? limpia : `${limpia}/api`;
 }
 
-const DEFAULT_CLOUD_URL = normalizarUrlApi(
-  import.meta.env.VITE_CLOUD_API_URL || "https://mariosolis2025--aboghub-ia-propia-fastapi-app.us-east.modal.run/api"
-);
-const DEFAULT_LOCAL_URL = normalizarUrlApi(
-  import.meta.env.VITE_LOCAL_API_URL || "http://127.0.0.1:8000/api"
-);
-
-export function esUrlPlaceholder(url) {
-  if (!url) return true;
-  const lower = url.toLowerCase();
-  return lower.includes("tu-usuario--") || lower.includes("tu-usuario-aboghub") || lower.includes("andrescalza31");
-}
+const DEFAULT_CLOUD_URL = normalizarUrlApi(import.meta.env.VITE_CLOUD_API_URL || "");
+const DEFAULT_LOCAL_URL = normalizarUrlApi(import.meta.env.VITE_LOCAL_API_URL || "http://127.0.0.1:8000/api");
 
 export function obtenerModoMotor() {
-  localStorage.setItem("aboghub_engine_mode", "cloud");
   return "cloud";
 }
 
@@ -27,8 +16,11 @@ export function establecerModoMotor(modo) {
 }
 
 export function obtenerUrlCloud() {
-  localStorage.setItem("aboghub_cloud_url", DEFAULT_CLOUD_URL);
-  return DEFAULT_CLOUD_URL;
+  if (DEFAULT_CLOUD_URL) {
+    return DEFAULT_CLOUD_URL;
+  }
+  const guardada = localStorage.getItem("aboghub_cloud_url");
+  return guardada ? normalizarUrlApi(guardada) : DEFAULT_LOCAL_URL;
 }
 
 export function establecerUrlCloud(url) {
@@ -41,22 +33,15 @@ export function obtenerUrlLocal() {
 }
 
 export function establecerUrlLocal(url) {
-  const limpia = url.trim().replace(/\/+$/, "");
+  const limpia = normalizarUrlApi(url);
   localStorage.setItem("aboghub_local_url", limpia);
 }
 
 export function getApiBase() {
-  const modo = obtenerModoMotor();
-  if (modo === "cloud") {
-    const cloudUrl = obtenerUrlCloud();
-    if (!esUrlPlaceholder(cloudUrl)) {
-      return cloudUrl;
-    }
-  }
-  return obtenerUrlLocal();
+  return obtenerUrlCloud();
 }
 
-export const API_BASE = DEFAULT_LOCAL_URL;
+export const API_BASE = getApiBase();
 
 export function obtenerHeadersAuth(esJson = true) {
   const token = localStorage.getItem("aboghub_token");
@@ -102,7 +87,6 @@ export function limpiarLogsCliente() {
 export function traducirError(err, contexto = "General") {
   const msg = (err?.message || String(err || "")).trim();
   const baseActiva = getApiBase();
-  const modoActual = obtenerModoMotor();
 
   if (
     msg.includes("Failed to fetch") ||
@@ -110,16 +94,9 @@ export function traducirError(err, contexto = "General") {
     msg.includes("ERR_FAILED") ||
     msg.includes("Load failed")
   ) {
-    let explicacion;
-    if (esUrlPlaceholder(baseActiva)) {
-      explicacion =
-        "El modo Cloud aún tiene una URL de ejemplo ('tu-usuario--...'). Se ha restablecido automáticamente al Motor Local (http://127.0.0.1:8000/api). Intenta nuevamente.";
-      establecerModoMotor("local");
-    } else if (modoActual === "local" || baseActiva.includes("127.0.0.1") || baseActiva.includes("localhost")) {
-      explicacion = `No hay conexión con tu servidor Backend Local (${baseActiva}). Verifica que en tu terminal esté encendido FastAPI con el comando: uvicorn main:app --reload`;
-    } else {
-      explicacion = `No se pudo conectar con el servidor Cloud en '${baseActiva}'. Verifica que el despliegue en Modal esté activo o cambia el switch a 'Demo Laptop'.`;
-    }
+    const explicacion = !DEFAULT_CLOUD_URL
+      ? "Falta configurar la variable de entorno VITE_CLOUD_API_URL en Vercel o en frontend/.env con la URL del servidor Backend."
+      : `No se pudo conectar con el servidor Backend (${baseActiva}). Si el contenedor GPU estaba en reposo para ahorrar créditos, espera unos segundos y vuelve a intentar.`;
     registrarLogCliente("ERROR_RED", contexto, explicacion, `${msg} -> URL: ${baseActiva}`);
     return explicacion;
   }
